@@ -1,5 +1,18 @@
 version: '3.7'
 services:
+  mysql:
+    image: mysql:latest
+    restart: always
+    container_name: opentelemetry_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password # Defina sua senha de root aqui
+      MYSQL_DATABASE: sample_db # O nome do banco de dados que deseja criar
+      MYSQL_USER: user # Nome de usuário para acessar o banco de dados
+      MYSQL_PASSWORD: password # Senha para o usuário do banco de dados
+    ports:
+      - "8102:3306" # Mapeamento da porta do host para a porta do contêiner MySQL
+    volumes:
+      - ./data:/var/lib/mysql # Onde os dados do MySQL serão armazenados no host
   app:
     image: lissonpsantos2/ubuntu-phps:latest
     restart: always
@@ -11,6 +24,20 @@ services:
     command: bash -c "selectphp 8.1 && apachelinker /home/project-folder/public && tail -f /tmp/dev.log"
     ports:
       - 8101:80
+    depends_on:
+      - mysql # Garante que o app aguarde o serviço MySQL estar pronto antes de iniciar
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    container_name: opentelemetry_phpmyadmin
+    environment:
+      PMA_HOST: mysql # Nome do serviço do contêiner MySQL
+      PMA_USER: user # Nome de usuário para acessar o banco de dados
+      PMA_PASSWORD: password # Senha para o usuário do banco de dados
+    ports:
+      - "8103:80" # Mapeamento da porta do host para a porta do contêiner phpMyAdmin
+    depends_on:
+      - mysql # Garante que o serviço phpMyAdmin aguarde o serviço MySQL estar pronto antes de iniciar
 networks:
   opentelemetry_php:
     name: opentelemetry_php
